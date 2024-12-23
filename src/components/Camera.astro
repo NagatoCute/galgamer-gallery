@@ -1,0 +1,193 @@
+---
+
+---
+<body>
+<canvas id="mainCanvas"></canvas>
+</body>
+
+<script type="module">
+    // 引入three.js库
+    import * as THREE from 'https://cdn.skypack.dev/three@0.130.0';
+
+    let scene, camera, renderer, leftPress, mouse, raycaster, left, right, front, mashiro;
+
+
+    init();
+    helper();
+    animate();
+
+    // 初始化函数，设置场景、相机、光源等
+    function init() {
+        // 创建场景
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff); // 背景颜色为白色
+
+        // 创建WebGL渲染器，并设置画布和抗锯齿
+        renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById("mainCanvas"),
+            antialias: true,  // 开启抗锯齿
+            alpha: true  // 启用透明背景
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight); // 设置渲染器大小为浏览器窗口大小
+        // 监听窗口大小改变事件
+        window.addEventListener('resize', onWindowResize, false);
+
+        // 定义窗口大小改变时的处理函数
+        function onWindowResize() {
+            // 更新相机的长宽比和投影矩阵
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            // 更新渲染器大小
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // 创建透视相机
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 10, 30); // 设置相机位置
+
+        // 初始化鼠标向量和射线投射器
+        mouse = new THREE.Vector2();
+        raycaster = new THREE.Raycaster();
+
+        // 添加环境光，增强场景的照明
+        var ambientLight = new THREE.AmbientLight(0x606060);
+        scene.add(ambientLight);
+
+        // 添加平行光，模拟太阳光
+        var directionalLight = new THREE.DirectionalLight(0xBCD2EE);
+        directionalLight.position.set(1, 0.75, 0.5).normalize(); // 设置光源方向
+        scene.add(directionalLight);
+    }
+
+    // 添加辅助工具：网格和坐标轴
+    function helper() {
+        // 创建网格帮助器，展示100单位大小的网格
+        var grid = new THREE.GridHelper(100, 20, 0xFF0000, 0x000000);
+        grid.material.opacity = 0.1;
+        grid.material.transparent = true;
+        scene.add(grid);
+
+        // 创建坐标轴帮助器
+        var axesHelper = new THREE.AxesHelper(30);
+        scene.add(axesHelper);
+
+
+        // 创建两堵墙的网格帮助器
+
+        // 左墙的网格帮助器
+        var leftWallGrid = new THREE.GridHelper(100, 20, 0x00FF00, 0x000000);
+        leftWallGrid.material.opacity = 0.3;
+        leftWallGrid.material.transparent = true;
+        leftWallGrid.position.set(-50, 50, 0);
+        leftWallGrid.rotation.z = Math.PI / 2; // 旋转网格帮助器使其变为墙体
+        scene.add(leftWallGrid);
+
+        // 右墙的网格帮助器
+        var rightWallGrid = new THREE.GridHelper(100, 20, 0x00FF00, 0x000000);
+        rightWallGrid.material.opacity = 0.3;
+        rightWallGrid.material.transparent = true;
+        rightWallGrid.position.set(50, 50, 0);
+        rightWallGrid.rotation.z = Math.PI / 2; // 旋转网格帮助器使其变为墙体
+        scene.add(rightWallGrid);
+    }
+
+    // 动画函数，不断更新渲染
+    function animate() {
+        requestAnimationFrame(animate); // 每次渲染时请求下一帧
+        renderer.render(scene, camera); // 渲染场景
+
+        let vect = camera.getWorldDirection(new THREE.Vector3());
+        if (front) {
+            camera.position.z += vect.dot(new THREE.Vector3(0, 0, 15)) * 0.01;
+            camera.position.x += vect.dot(new THREE.Vector3(15, 0, 0)) * 0.01;
+        }
+        if (mashiro) {
+            camera.position.z -= vect.dot(new THREE.Vector3(0, 0, 15)) * 0.01;
+            camera.position.x -= vect.dot(new THREE.Vector3(15, 0, 0)) * 0.01;
+        }
+        if (left) {
+            // 计算相机的右侧方向向量
+            let rightVect = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+            camera.position.x -= rightVect.x * 0.1;
+            camera.position.z -= rightVect.z * 0.1;
+        }
+        if (right) {
+            // 计算相机的右侧方向向量
+            let rightVect = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+            camera.position.x += rightVect.x * 0.1;
+            camera.position.z += rightVect.z * 0.1;
+        }
+        // 设置左墙和右墙的边界
+        const leftWallX = -50;
+        const rightWallX = 50;
+
+        // 限制相机的 x 坐标在左墙和右墙之间
+        camera.position.x = Math.max(leftWallX + 5, Math.min(rightWallX - 5, camera.position.x));
+
+    }
+
+    // 监听鼠标移动事件，实现相机旋转
+    window.addEventListener('mousemove', function (event) {
+        event.preventDefault();
+        if (leftPress) {
+            camera.rotateOnWorldAxis(
+                new THREE.Vector3(0, 1, 0),
+                event.movementX / 500
+            );
+            camera.rotateOnAxis(
+                new THREE.Vector3(1, 0, 0),
+                event.movementY / 500
+            );
+        }
+    });
+
+    // 监听鼠标按下事件，设置旋转标志为true
+    window.addEventListener('mousedown', function (event) {
+        event.preventDefault();
+        leftPress = true;
+    });
+
+    // 监听鼠标松开事件，设置旋转标志为false
+    window.addEventListener('mouseup', function (event) {
+        event.preventDefault();
+        leftPress = false;
+    });
+
+    // 监听键盘按下事件，实现第一人称视角移动
+    window.addEventListener('keydown', function (event) {
+        switch (event.key.toLowerCase()) {
+            case 'a':
+                left = true;
+                break;
+            case 'd':
+                right = true;
+                break;
+            case 's':
+                mashiro = true;
+                break;
+            case 'w':
+                front = true;
+                break;
+        }
+    });
+
+
+    // 监听键盘松开事件，停止视角移动
+    window.addEventListener('keyup', function (event) {
+        switch (event.key.toLowerCase()) {
+            case 'a':
+                left = false;
+                break;
+            case 'd':
+                right = false;
+                break;
+            case 's':
+                mashiro = false;
+                break;
+            case 'w':
+                front = false;
+                break;
+        }
+    });
+
+</script>
