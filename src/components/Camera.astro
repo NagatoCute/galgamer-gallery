@@ -1,6 +1,3 @@
----
-
----
 <body>
 <canvas id="mainCanvas"></canvas>
 </body>
@@ -9,8 +6,12 @@
     // 引入three.js库
     import * as THREE from 'https://cdn.skypack.dev/three@0.130.0';
 
-    let scene, camera, renderer, leftPress, mouse, raycaster, left, right, front, mashiro;
+    let scene, camera, renderer, leftPress, mouse, raycaster, left, right, front, mashiro, framesGroup;
 
+    // 图片尺寸和数量设置
+    const imageWidth = 600;
+    const imageHeight = 1080;
+    const imageCount = 7;  // 要加载的图片数量
 
     init();
     helper();
@@ -57,6 +58,13 @@
         var directionalLight = new THREE.DirectionalLight(0xBCD2EE);
         directionalLight.position.set(1, 0.75, 0.5).normalize(); // 设置光源方向
         scene.add(directionalLight);
+
+        // 创建一个组来存放画框
+        framesGroup = new THREE.Group();
+        scene.add(framesGroup);
+
+        // 加载图片并创建画框
+        loadImages();
     }
 
     // 添加辅助工具：网格和坐标轴
@@ -71,23 +79,19 @@
         var axesHelper = new THREE.AxesHelper(30);
         scene.add(axesHelper);
 
-
         // 创建两堵墙的网格帮助器
-
-        // 左墙的网格帮助器
         var leftWallGrid = new THREE.GridHelper(100, 20, 0x00FF00, 0x000000);
         leftWallGrid.material.opacity = 0.3;
         leftWallGrid.material.transparent = true;
         leftWallGrid.position.set(-50, 50, 0);
-        leftWallGrid.rotation.z = Math.PI / 2; // 旋转网格帮助器使其变为墙体
+        leftWallGrid.rotation.z = Math.PI / 2;
         scene.add(leftWallGrid);
 
-        // 右墙的网格帮助器
         var rightWallGrid = new THREE.GridHelper(100, 20, 0x00FF00, 0x000000);
         rightWallGrid.material.opacity = 0.3;
         rightWallGrid.material.transparent = true;
         rightWallGrid.position.set(50, 50, 0);
-        rightWallGrid.rotation.z = Math.PI / 2; // 旋转网格帮助器使其变为墙体
+        rightWallGrid.rotation.z = Math.PI / 2;
         scene.add(rightWallGrid);
     }
 
@@ -106,13 +110,11 @@
             camera.position.x -= vect.dot(new THREE.Vector3(15, 0, 0)) * 0.01;
         }
         if (left) {
-            // 计算相机的右侧方向向量
             let rightVect = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
             camera.position.x -= rightVect.x * 0.1;
             camera.position.z -= rightVect.z * 0.1;
         }
         if (right) {
-            // 计算相机的右侧方向向量
             let rightVect = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
             camera.position.x += rightVect.x * 0.1;
             camera.position.z += rightVect.z * 0.1;
@@ -123,7 +125,48 @@
 
         // 限制相机的 x 坐标在左墙和右墙之间
         camera.position.x = Math.max(leftWallX + 5, Math.min(rightWallX - 5, camera.position.x));
+    }
 
+    // 加载图片并创建画框
+    function loadImages() {
+        for (let i = 0; i < imageCount; i++) {
+            // 使用占位符图片
+            const imageUrl = `https://placehold.co/${imageWidth}x${imageHeight}/jpg`;
+            createFrame(imageUrl, i);
+        }
+    }
+
+    // 创建画框
+    function createFrame(imageUrl, index) {
+        // 框架的尺寸
+        const frameWidth = 9;
+        const frameHeight = 15;
+
+        // 计算画框的位置，使其均匀分布在 x=-50 到 x=50 的范围内
+        const totalWidth = (frameWidth + 3) * imageCount - 3; // 总宽度减去最后一个间隔
+        const startZ = -totalWidth / 2; // 起始位置
+
+        const positionZ = startZ + index * (frameWidth + 3);  // 按照顺序排列图片
+
+        // 创建画框的平面
+        const frameGeometry = new THREE.PlaneGeometry(frameWidth, frameHeight);
+        const textureLoader = new THREE.TextureLoader();
+
+        // 加载占位符图片
+        const texture = textureLoader.load(imageUrl);
+
+        const frameMaterial = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide});
+        const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+
+        // 设置画框位置
+        frame.position.set(50, 10, positionZ);
+        // 旋转画框，使其从垂直状态转为水平方向
+        frame.rotation.y = Math.PI / 2;
+
+        // 左右镜像
+        frame.scale.x = -1;
+        // 将画框添加到组中
+        framesGroup.add(frame);
     }
 
     // 监听鼠标移动事件，实现相机旋转
@@ -171,7 +214,6 @@
         }
     });
 
-
     // 监听键盘松开事件，停止视角移动
     window.addEventListener('keyup', function (event) {
         switch (event.key.toLowerCase()) {
@@ -189,5 +231,4 @@
                 break;
         }
     });
-
 </script>
