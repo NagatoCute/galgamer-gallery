@@ -1,58 +1,78 @@
-import { useRef, useEffect } from 'react';
-import { SceneManager, CameraController, SceneHelper, Gallery } from '@/utils/3dClass';
+import { useRef, useEffect, useState } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { useDrag } from '@use-gesture/react'
+import * as THREE from "three";
+import { Subject } from 'rxjs';
 
 export default function Scene() {
-  const canvas = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    if (!canvas.current) return;
-
-    let requestAnimationFrameId: number;
-
-    const sceneManager = new SceneManager(canvas.current);
-    const cameraController = new CameraController(sceneManager.camera);
-    const helper = new SceneHelper(sceneManager.scene);
-    const gallery = new Gallery(sceneManager.scene);
-
-    function animate() {
-      requestAnimationFrameId = requestAnimationFrame(animate);
-      cameraController.update();
-      sceneManager.render();
-    }
-    animate();
-
-    return () => cancelAnimationFrame(requestAnimationFrameId);
-  }, [canvas]);
-
   return (
-    <canvas ref={canvas} />
+    <Canvas
+      camera={{  // 默認值
+        position: [0, 10, 30],
+        fov: 75,
+        near: 0.1,
+        far: 1000,
+      }}
+    >
+      {/* 光照 */}
+      <ambientLight color={0x606060} intensity={1} />
+      <directionalLight color={0xbcd2ee} position={[1, 0.75, 0.5]} intensity={1} />
+
+      {/* 方塊 */}
+      <mesh>
+        <boxGeometry />
+        <meshStandardMaterial color={0xffff00} />
+      </mesh>
+
+      <gridHelper args={[100, 20, 0xff0000, 0x000000]} /> {/* 地面 */}
+      <axesHelper args={[30]} /> {/* 坐标轴 */}
+      {/* 牆 */}
+      <gridHelper args={[100, 20, 0x00ff00, 0x000000]} position={[-50, 50, 0]} rotation={[0, 0, Math.PI / 2]} />
+      <gridHelper args={[100, 20, 0x00ff00, 0x000000]} position={[50, 50, 0]} rotation={[0, 0, Math.PI / 2]} />
+
+      <CameraPosition position={[10, 10, 10]} />
+      <CameraRotation />
+    </Canvas>
   );
 }
 
-// // 主应用类，负责初始化和运行整个应用
-// class App {
-//   sceneManager: SceneManager;
-//   cameraController: CameraController;
-//   helper: SceneHelper;
-//   gallery: Gallery;
 
-//   constructor() {
-//     this.sceneManager = new SceneManager(); // 创建场景管理器
-//     this.cameraController = new CameraController(this.sceneManager.camera); // 创建相机控制器
-//     this.helper = new SceneHelper(this.sceneManager.scene); // 创建场景辅助工具
-//     this.gallery = new Gallery(this.sceneManager.scene); // 创建画廊
+function CameraPosition(
+  { position }: { position: [number, number, number] }
+) {
+  const [x, y, z] = position;
+  useFrame(({ camera }, delta, frame) => {
+    camera.position.x = x;
+    camera.position.y = y;
+    camera.position.z = z;
+  });
+  return <></>;
+}
 
-//     // 开始动画循环
-//     this.animate();
-//   }
+function CameraRotation() {
+  const accDelta = useRef([0, 0]);
+  const ratio = 0.002;
 
-//   // 动画函数，不断更新渲染
-//   animate() {
-//     requestAnimationFrame(this.animate.bind(this)); // 每次渲染时请求下一帧
-//     this.cameraController.update(); // 更新相机位置
-//     this.sceneManager.render(); // 渲染场景
-//   }
-// }
+  useDrag(({ delta: [x, y] }) => {
+    accDelta.current[0] += x * ratio;
+    accDelta.current[1] += y * ratio;
+  }, { target: window });
 
-// // 初始化应用
-// new App();
+  useFrame(({ camera }) => {
+    let [deltaX, deltaY] = accDelta.current;
+    // 防止攝影機在垂直方向上旋轉超過90度
+    const current = camera.getWorldDirection(new THREE.Vector3());
+    if (current.y + deltaY > 1) {
+      deltaY = 1 - current.y;
+    } else if (current.y + deltaY < -1) {
+      deltaY = -1 - current.y;
+    }
+
+    camera.rotateOnAxis(new THREE.Vector3(1, 0, 0), deltaY);
+    camera.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), deltaX);
+    // Reset accumulated delta
+    accDelta.current = [0, 0];
+  });
+
+  return <></>;
+}
