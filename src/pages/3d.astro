@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Camera from "../components/Camera.astro";
+import Scene from '@/components/3dScene';
+---
+
+<Layout>
+  <!-- <Camera /> -->
+  <Scene client:only="react"/>
+</Layout>
