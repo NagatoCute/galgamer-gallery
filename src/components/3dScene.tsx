@@ -50,7 +50,7 @@ function CameraPosition() {
 
     // 计算右向量
     const right = new THREE.Vector3();
-    right.crossVectors(forward, camera.up).normalize(); // 修改这里
+    right.crossVectors(forward, camera.up).normalize();
 
     // 前进后退
     currentPos.add(forward.multiplyScalar(front * speed * delta));
