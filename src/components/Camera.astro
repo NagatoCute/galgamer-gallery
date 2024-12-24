@@ -1,237 +1,253 @@
 ---
-
 ---
+
 <body>
 <canvas id="mainCanvas"></canvas>
 </body>
 
 <script type="module">
-    // 引入three.js库
     import * as THREE from 'https://cdn.skypack.dev/three@0.130.0';
 
-    let scene, camera, renderer, leftPress, mouse, raycaster, left, right, front, mashiro, framesGroup;
+    // 场景管理器类
+    class SceneManager {
+        constructor() {
+            this.scene = new THREE.Scene();
+            this.scene.background = new THREE.Color(0xffffff);
 
-    // 图片尺寸和数量设置
-    const imageWidth = 600;
-    const imageHeight = 1080;
-    const imageCount = 7;  // 要加载的图片数量
+            this.renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById("mainCanvas"),
+                antialias: true,
+                alpha: true
+            });
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
 
-    init();
-    helper();
-    animate();
+            this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            this.camera.position.set(0, 10, 30);
 
-    // 初始化函数，设置场景、相机、光源等
-    function init() {
-        // 创建场景
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xffffff); // 背景颜色为白色
-
-        // 创建WebGL渲染器，并设置画布和抗锯齿
-        renderer = new THREE.WebGLRenderer({
-            canvas: document.getElementById("mainCanvas"),
-            antialias: true,  // 开启抗锯齿
-            alpha: true  // 启用透明背景
-        });
-        renderer.setSize(window.innerWidth, window.innerHeight); // 设置渲染器大小为浏览器窗口大小
-        // 监听窗口大小改变事件
-        window.addEventListener('resize', onWindowResize, false);
-
-        // 定义窗口大小改变时的处理函数
-        function onWindowResize() {
-            // 更新相机的长宽比和投影矩阵
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            // 更新渲染器大小
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            this.setupLights();
+            this.setupEventListeners();
         }
 
-        // 创建透视相机
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 10, 30); // 设置相机位置
+        setupLights() {
+            const ambientLight = new THREE.AmbientLight(0x606060);
+            this.scene.add(ambientLight);
 
-        // 初始化鼠标向量和射线投射器
-        mouse = new THREE.Vector2();
-        raycaster = new THREE.Raycaster();
-
-        // 添加环境光，增强场景的照明
-        var ambientLight = new THREE.AmbientLight(0x606060);
-        scene.add(ambientLight);
-
-        // 添加平行光，模拟太阳光
-        var directionalLight = new THREE.DirectionalLight(0xBCD2EE);
-        directionalLight.position.set(1, 0.75, 0.5).normalize(); // 设置光源方向
-        scene.add(directionalLight);
-
-        // 创建一个组来存放画框
-        framesGroup = new THREE.Group();
-        scene.add(framesGroup);
-
-        // 加载图片并创建画框
-        loadImages();
-    }
-
-    // 添加辅助工具：网格和坐标轴
-    function helper() {
-        // 创建网格帮助器，展示100单位大小的网格
-        var grid = new THREE.GridHelper(100, 20, 0xFF0000, 0x000000);
-        grid.material.opacity = 0.1;
-        grid.material.transparent = true;
-        scene.add(grid);
-
-        // 创建坐标轴帮助器
-        var axesHelper = new THREE.AxesHelper(30);
-        scene.add(axesHelper);
-
-        // 创建两堵墙的网格帮助器
-        var leftWallGrid = new THREE.GridHelper(100, 20, 0x00FF00, 0x000000);
-        leftWallGrid.material.opacity = 0.3;
-        leftWallGrid.material.transparent = true;
-        leftWallGrid.position.set(-50, 50, 0);
-        leftWallGrid.rotation.z = Math.PI / 2;
-        scene.add(leftWallGrid);
-
-        var rightWallGrid = new THREE.GridHelper(100, 20, 0x00FF00, 0x000000);
-        rightWallGrid.material.opacity = 0.3;
-        rightWallGrid.material.transparent = true;
-        rightWallGrid.position.set(50, 50, 0);
-        rightWallGrid.rotation.z = Math.PI / 2;
-        scene.add(rightWallGrid);
-    }
-
-    // 动画函数，不断更新渲染
-    function animate() {
-        requestAnimationFrame(animate); // 每次渲染时请求下一帧
-        renderer.render(scene, camera); // 渲染场景
-
-        let vect = camera.getWorldDirection(new THREE.Vector3());
-        if (front) {
-            camera.position.z += vect.dot(new THREE.Vector3(0, 0, 15)) * 0.01;
-            camera.position.x += vect.dot(new THREE.Vector3(15, 0, 0)) * 0.01;
+            const directionalLight = new THREE.DirectionalLight(0xBCD2EE);
+            directionalLight.position.set(1, 0.75, 0.5).normalize();
+            this.scene.add(directionalLight);
         }
-        if (mashiro) {
-            camera.position.z -= vect.dot(new THREE.Vector3(0, 0, 15)) * 0.01;
-            camera.position.x -= vect.dot(new THREE.Vector3(15, 0, 0)) * 0.01;
-        }
-        if (left) {
-            let rightVect = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-            camera.position.x -= rightVect.x * 0.1;
-            camera.position.z -= rightVect.z * 0.1;
-        }
-        if (right) {
-            let rightVect = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-            camera.position.x += rightVect.x * 0.1;
-            camera.position.z += rightVect.z * 0.1;
-        }
-        // 设置左墙和右墙的边界
-        const leftWallX = -50;
-        const rightWallX = 50;
 
-        // 限制相机的 x 坐标在左墙和右墙之间
-        camera.position.x = Math.max(leftWallX + 5, Math.min(rightWallX - 5, camera.position.x));
-    }
+        setupEventListeners() {
+            window.addEventListener('resize', () => {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
 
-    // 加载图片并创建画框
-    function loadImages() {
-        for (let i = 0; i < imageCount; i++) {
-            // 使用占位符图片
-            const imageUrl = `https://placehold.co/${imageWidth}x${imageHeight}/jpg`;
-            createFrame(imageUrl, i);
+        render() {
+            this.renderer.render(this.scene, this.camera);
         }
     }
 
-    // 创建画框
-    function createFrame(imageUrl, index) {
-        // 框架的尺寸
-        const frameWidth = 9;
-        const frameHeight = 15;
+    // 相机控制器类
+    class CameraController {
+        constructor(camera) {
+            this.camera = camera;
+            this.leftPress = false;
+            this.front = false;
+            this.mashiro = false;
+            this.left = false;
+            this.right = false;
 
-        // 计算画框的位置，使其均匀分布在 x=-50 到 x=50 的范围内
-        const totalWidth = (frameWidth + 3) * imageCount - 3; // 总宽度减去最后一个间隔
-        const startZ = -totalWidth / 2; // 起始位置
+            this.setupEventListeners();
+        }
 
-        const positionZ = startZ + index * (frameWidth + 3);  // 按照顺序排列图片
+        setupEventListeners() {
+            window.addEventListener('mousemove', this.handleMouseMove.bind(this));
+            window.addEventListener('mousedown', () => this.leftPress = true);
+            window.addEventListener('mouseup', () => this.leftPress = false);
+            window.addEventListener('keydown', this.handleKeyDown.bind(this));
+            window.addEventListener('keyup', this.handleKeyUp.bind(this));
+        }
 
-        // 创建画框的平面
-        const frameGeometry = new THREE.PlaneGeometry(frameWidth, frameHeight);
-        const textureLoader = new THREE.TextureLoader();
+        handleMouseMove(event) {
+            if (this.leftPress) {
+                this.camera.rotateOnWorldAxis(
+                    new THREE.Vector3(0, 1, 0),
+                    event.movementX / 500
+                );
+                this.camera.rotateOnAxis(
+                    new THREE.Vector3(1, 0, 0),
+                    event.movementY / 500
+                );
+            }
+        }
 
-        // 加载占位符图片
-        const texture = textureLoader.load(imageUrl);
+        handleKeyDown(event) {
+            switch (event.key.toLowerCase()) {
+                case 'w': this.front = true; break;
+                case 's': this.mashiro = true; break;
+                case 'a': this.left = true; break;
+                case 'd': this.right = true; break;
+            }
+        }
 
-        const frameMaterial = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide});
-        const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+        handleKeyUp(event) {
+            switch (event.key.toLowerCase()) {
+                case 'w': this.front = false; break;
+                case 's': this.mashiro = false; break;
+                case 'a': this.left = false; break;
+                case 'd': this.right = false; break;
+            }
+        }
 
-        // 设置画框位置
-        frame.position.set(50, 10, positionZ);
-        // 旋转画框，使其从垂直状态转为水平方向
-        frame.rotation.y = Math.PI / 2;
+        update() {
+            let vect = this.camera.getWorldDirection(new THREE.Vector3());
 
-        // 左右镜像
-        frame.scale.x = -1;
-        // 将画框添加到组中
-        framesGroup.add(frame);
+            if (this.front) {
+                this.camera.position.z += vect.dot(new THREE.Vector3(0, 0, 15)) * 0.01;
+                this.camera.position.x += vect.dot(new THREE.Vector3(15, 0, 0)) * 0.01;
+            }
+            if (this.mashiro) {
+                this.camera.position.z -= vect.dot(new THREE.Vector3(0, 0, 15)) * 0.01;
+                this.camera.position.x -= vect.dot(new THREE.Vector3(15, 0, 0)) * 0.01;
+            }
+            if (this.left) {
+                let rightVect = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion);
+                this.camera.position.x -= rightVect.x * 0.1;
+                this.camera.position.z -= rightVect.z * 0.1;
+            }
+            if (this.right) {
+                let rightVect = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion);
+                this.camera.position.x += rightVect.x * 0.1;
+                this.camera.position.z += rightVect.z * 0.1;
+            }
+
+            const leftWallX = -50;
+            const rightWallX = 50;
+            this.camera.position.x = Math.max(leftWallX + 5, Math.min(rightWallX - 5, this.camera.position.x));
+        }
     }
 
-    // 监听鼠标移动事件，实现相机旋转
-    window.addEventListener('mousemove', function (event) {
-        event.preventDefault();
-        if (leftPress) {
-            camera.rotateOnWorldAxis(
-                new THREE.Vector3(0, 1, 0),
-                event.movementX / 500
-            );
-            camera.rotateOnAxis(
-                new THREE.Vector3(1, 0, 0),
-                event.movementY / 500
-            );
+    // 画框类
+    class Frame {
+        constructor(scene, imageUrl, position, dimensions) {
+            this.scene = scene;
+            this.imageUrl = imageUrl;
+            this.position = position;
+            this.dimensions = dimensions;
+            this.mesh = this.createFrame();
         }
-    });
 
-    // 监听鼠标按下事件，设置旋转标志为true
-    window.addEventListener('mousedown', function (event) {
-        event.preventDefault();
-        leftPress = true;
-    });
+        createFrame() {
+            const geometry = new THREE.PlaneGeometry(this.dimensions.width, this.dimensions.height);
+            const texture = new THREE.TextureLoader().load(this.imageUrl);
+            const material = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide});
+            const frame = new THREE.Mesh(geometry, material);
 
-    // 监听鼠标松开事件，设置旋转标志为false
-    window.addEventListener('mouseup', function (event) {
-        event.preventDefault();
-        leftPress = false;
-    });
+            frame.position.set(this.position.x, this.position.y, this.position.z);
+            frame.rotation.y = Math.PI / 2;
+            frame.scale.x = -1;
 
-    // 监听键盘按下事件，实现第一人称视角移动
-    window.addEventListener('keydown', function (event) {
-        switch (event.key.toLowerCase()) {
-            case 'a':
-                left = true;
-                break;
-            case 'd':
-                right = true;
-                break;
-            case 's':
-                mashiro = true;
-                break;
-            case 'w':
-                front = true;
-                break;
+            return frame;
         }
-    });
+    }
 
-    // 监听键盘松开事件，停止视角移动
-    window.addEventListener('keyup', function (event) {
-        switch (event.key.toLowerCase()) {
-            case 'a':
-                left = false;
-                break;
-            case 'd':
-                right = false;
-                break;
-            case 's':
-                mashiro = false;
-                break;
-            case 'w':
-                front = false;
-                break;
+    // 画廊类
+    class Gallery {
+        constructor(scene) {
+            this.scene = scene;
+            this.framesGroup = new THREE.Group();
+            this.scene.add(this.framesGroup);
+
+            this.imageWidth = 600;
+            this.imageHeight = 1080;
+            this.frameCount = 7;
+
+            this.createFrames();
         }
-    });
+
+        createFrames() {
+            const frameWidth = 9;
+            const frameHeight = 15;
+            const spacing = 3;
+
+            const totalWidth = (frameWidth + spacing) * this.frameCount - spacing;
+            const startZ = -totalWidth / 2;
+
+            for (let i = 0; i < this.frameCount; i++) {
+                const imageUrl = `https://placehold.co/${this.imageWidth}x${this.imageHeight}/jpg`;
+                const positionZ = startZ + i * (frameWidth + spacing);
+
+                const frame = new Frame(
+                    this.scene,
+                    imageUrl,
+                    { x: 50, y: 10, z: positionZ },
+                    { width: frameWidth, height: frameHeight }
+                );
+
+                this.framesGroup.add(frame.mesh);
+            }
+        }
+    }
+
+    // 场景辅助工具类
+    class SceneHelper {
+        constructor(scene) {
+            this.scene = scene;
+            this.addGrid();
+            this.addAxes();
+            this.addWallGrids();
+        }
+
+        addGrid() {
+            const grid = new THREE.GridHelper(100, 20, 0xFF0000, 0x000000);
+            grid.material.opacity = 0.1;
+            grid.material.transparent = true;
+            this.scene.add(grid);
+        }
+
+        addAxes() {
+            const axesHelper = new THREE.AxesHelper(30);
+            this.scene.add(axesHelper);
+        }
+
+        addWallGrids() {
+            const leftWallGrid = new THREE.GridHelper(100, 20, 0x00FF00, 0x000000);
+            leftWallGrid.material.opacity = 0.3;
+            leftWallGrid.material.transparent = true;
+            leftWallGrid.position.set(-50, 50, 0);
+            leftWallGrid.rotation.z = Math.PI / 2;
+            this.scene.add(leftWallGrid);
+
+            const rightWallGrid = new THREE.GridHelper(100, 20, 0x00FF00, 0x000000);
+            rightWallGrid.material.opacity = 0.3;
+            rightWallGrid.material.transparent = true;
+            rightWallGrid.position.set(50, 50, 0);
+            rightWallGrid.rotation.z = Math.PI / 2;
+            this.scene.add(rightWallGrid);
+        }
+    }
+
+    // 主应用类
+    class App {
+        constructor() {
+            this.sceneManager = new SceneManager();
+            this.cameraController = new CameraController(this.sceneManager.camera);
+            this.helper = new SceneHelper(this.sceneManager.scene);
+            this.gallery = new Gallery(this.sceneManager.scene);
+
+            this.animate();
+        }
+
+        animate() {
+            requestAnimationFrame(this.animate.bind(this));
+            this.cameraController.update();
+            this.sceneManager.render();
+        }
+    }
+
+    // 初始化应用
+    new App();
 </script>
