@@ -41,21 +41,31 @@ function CameraPosition() {
   const direction = useKeyboardMoving();
   const speed = 30;
   useFrame(({ camera }, delta, frame) => {
-    const [front, side] = direction; // 之後要歸一化
-    const currentAngle = camera.getWorldDirection(new THREE.Vector3());
+    const [front, side] = direction; // 之后要归一化
     let currentPos = camera.position.clone();
 
-    // 前進後退
-    currentPos.add(currentAngle.multiplyScalar(front * speed * delta));
-    
-    // 左右移動我擦，這個不靈
-    const right = currentAngle.clone().cross(camera.up);
+    // 获取相机的前向方向
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+
+    // 计算右向量
+    const right = new THREE.Vector3();
+    right.crossVectors(forward, camera.up).normalize(); // 修改这里
+
+    // 前进后退
+    currentPos.add(forward.multiplyScalar(front * speed * delta));
+
+    // 左右移动
     currentPos.add(right.multiplyScalar(side * speed * delta));
+
+    // 防止飞到天上或地下
+    currentPos.y = Math.max(6, 7);
 
     camera.position.set(currentPos.x, currentPos.y, currentPos.z);
   });
   return <></>;
 }
+
 
 function CameraRotation() {
   const accDelta = useRef([0, 0]);
