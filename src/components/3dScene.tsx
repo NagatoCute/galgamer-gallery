@@ -41,12 +41,23 @@ function CameraPosition() {
   const direction = useKeyboardMoving();
   const speed = 30;
   useFrame(({ camera }, delta, frame) => {
-    const [front, side] = direction; // 之后要归一化
+    let [front, side] = direction; // 归一化
     let currentPos = camera.position.clone();
+
+    // 归一化方向输入
+    //计算 front 和 side 的向量的长度：directionLength = sqrt(front^2 + side^2)。
+    // 如果 directionLength 大于 0，则将 front 和 side 分别除以 directionLength，从而将它们转换为单位向量 。
+    const directionLength = Math.sqrt(front * front + side * side);
+    if (directionLength > 0) {
+      front /= directionLength;
+      side /= directionLength;
+    }
+
 
     // 获取相机的前向方向
     const forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
+    forward.normalize(); // 归一化前向方向
 
     // 计算右向量
     const right = new THREE.Vector3();
