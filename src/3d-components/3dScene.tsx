@@ -16,7 +16,8 @@ export default function Scene() {
           shadows
       >
           {/* 光照 */}
-          <ambientLight color={0x606060} intensity={1}/>
+          {/*后面的数越大阴影越淡*/}
+          <ambientLight color={0x606060} intensity={3}/>
           {/*<directionalLight color={0xbcd2ee} position={[1, 0.75, 0.5]} intensity={2} />*/}
           {/*方向光，投射阴影的，我调不好，但是确实可以用*/}
           <directionalLight
