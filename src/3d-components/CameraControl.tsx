@@ -1,94 +1,42 @@
-import { useRef, useEffect, useState } from 'react';
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
-import { useDrag } from '@use-gesture/react'
 import * as THREE from "three";
-import { Subject, map, filter, pipe, scan, merge } from 'rxjs';
+import { Subject, map, filter, scan, merge } from 'rxjs';
+import { useFrame } from '@react-three/fiber'
+import { useRef, useEffect, useState } from 'react';
+import { useDrag } from '@use-gesture/react'
 
-export default function Scene() {
-  return (
-      <Canvas
-          camera={{  // 默認值
-            position: [0, 10, 30],
-            fov: 75,
-            near: 0.1,
-            far: 1000,
-          }}
-      >
-        {/* 光照 */}
-        <ambientLight color={0x606060} intensity={1}/>
-        <directionalLight color={0xbcd2ee} position={[1, 0.75, 0.5]} intensity={1}/>
+export function CameraRotation() {
+  const accDelta = useRef([0, 0]);
+  const ratio = 0.002;
 
-        {/* 方塊 */}
-        <mesh>
-          <boxGeometry/>
-          <meshStandardMaterial color={0xffff00}/>
-        </mesh>
+  useDrag(({ delta: [x, y] }) => {
+    accDelta.current[0] += x * ratio;
+    accDelta.current[1] += y * ratio;
+  }, { target: window });
 
-        {/*木地板*/}
-        <WoodFloor />
+  useFrame(({ camera }) => {
+    let [deltaX, deltaY] = accDelta.current;
+    // 防止攝影機在垂直方向上旋轉超過90度
+    const current = camera.getWorldDirection(new THREE.Vector3());
+    if (current.y + deltaY > 1) {
+      deltaY = 1 - current.y;
+    } else if (current.y + deltaY < -1) {
+      deltaY = -1 - current.y;
+    }
 
-        <gridHelper args={[100, 20, 0xff0000, 0x808080]}/>
-        {/* 地面 */}
-        <axesHelper args={[30]}/>
-        {/* 坐标轴 */}
-        {/* 牆 */}
-        <gridHelper args={[100, 20, 0x00ff00, 0x808080]} position={[-50, 50, 0]} rotation={[0, 0, Math.PI / 2]}/>
-        <gridHelper args={[100, 20, 0x00ff00, 0x808080]} position={[50, 50, 0]} rotation={[0, 0, Math.PI / 2]}/>
+    camera.rotateOnAxis(new THREE.Vector3(1, 0, 0), deltaY);
+    camera.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), deltaX);
+    // Reset accumulated delta
+    accDelta.current = [0, 0];
+  });
 
-        {/* 画框（大概） */}
-        {/* <FrameBox position={[50, 5, 0]} rotationAngle={0} /> */}
-        <FrameBox position={[-50, 11, -12]} rotationAngle={0}/>
-        <FrameBox position={[-50, 11, 12]} rotationAngle={0}/>
-        <FrameBox position={[-50, 11, 36]} rotationAngle={0}/>
-
-        <CameraPosition />
-        <CameraRotation />
-      </Canvas>
-  );
-}
-
-//木地板
-function WoodFloor() {
-  const textureLoader = new THREE.TextureLoader();
-  const texture = textureLoader.load('/texture/old-plank-flooring1_basecolor.png');
-
-// 设置纹理重复方式和重复次数
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(10, 10); // 调整重复次数
-
-return (
-    <mesh position={[0, -1, 0]}>
-      <boxGeometry args={[100, 2, 100]}/>
-      <meshStandardMaterial map={texture}/>
-    </mesh>
-);
-}
-//画框占位符
-function FrameBox({position, rotationAngle}: { position: [number, number, number], rotationAngle: number }) {
-  const width = 20;
-  const height = 12;
-  const depth = 0.1;
-  // 定义图片的宽度和高度
-  const imageWidth = 1024;
-  const imageHeight = 680;
-
-  // 加载图片纹理
-  const texture = useLoader(THREE.TextureLoader, `https://placehold.co/${imageWidth}x${imageHeight}/jpg`);
-
-  return (
-      <mesh position={position} rotation={[0, rotationAngle + Math.PI / 2, 0]}>
-        <boxGeometry args={[width, height, depth]}/>
-        <meshStandardMaterial map={texture}/>
-      </mesh>
-);
+  return <></>;
 }
 
 
-function CameraPosition() {
+export function CameraPosition() {
   const direction = useKeyboardMoving();
   const speed = 30;
-  useFrame(({camera}, delta, frame) => {
+  useFrame(({ camera }, delta, frame) => {
     let [front, side] = direction; // 归一化
     let currentPos = camera.position.clone();
 
@@ -130,36 +78,6 @@ function CameraPosition() {
   return <></>;
 }
 
-
-function CameraRotation() {
-  const accDelta = useRef([0, 0]);
-  const ratio = 0.002;
-
-  useDrag(({ delta: [x, y] }) => {
-    accDelta.current[0] += x * ratio;
-    accDelta.current[1] += y * ratio;
-  }, { target: window });
-
-  useFrame(({ camera }) => {
-    let [deltaX, deltaY] = accDelta.current;
-    // 防止攝影機在垂直方向上旋轉超過90度
-    const current = camera.getWorldDirection(new THREE.Vector3());
-    if (current.y + deltaY > 1) {
-      deltaY = 1 - current.y;
-    } else if (current.y + deltaY < -1) {
-      deltaY = -1 - current.y;
-    }
-
-    camera.rotateOnAxis(new THREE.Vector3(1, 0, 0), deltaY);
-    camera.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), deltaX);
-    // Reset accumulated delta
-    accDelta.current = [0, 0];
-  });
-
-  return <></>;
-}
-
-
 function useKeyboardMoving() {
   // 一個 hook 監聽鍵盤事件，返回移動的方向
   // 前進 (1,0), 後退 (-1,0), 左移 (0,-1), 右移 (0,1)
@@ -185,7 +103,7 @@ function useKeyboardMoving() {
   // 通過 keydown 和 keyup 事件的流，計算當前被按下的按鍵
 
   const allowedKeys = [
-    'w', 'a', 's', 'd', 
+    'w', 'a', 's', 'd',
     'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'
   ];
 
@@ -194,7 +112,7 @@ function useKeyboardMoving() {
       filter(e => allowedKeys.includes(e.key)),
       map(e => ({ key: e.key, pressed: true }))
     );
-    
+
     const keyUpEvents$ = keyUp$.current.pipe(
       filter(e => allowedKeys.includes(e.key)),
       map(e => ({ key: e.key, pressed: false }))
@@ -221,7 +139,6 @@ function useKeyboardMoving() {
 
     const wasdSub = pressing$.subscribe(
       (dir) => {
-        console.log(dir);
         setDirection(dir);
       }
     );
