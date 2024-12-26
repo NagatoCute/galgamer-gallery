@@ -20,7 +20,7 @@ export function MainBody(
   const { nodes, materials } = useGLTF('/goupe/main-body.prt.gltf') as GLTFResult;
   return (
     <group {...props} dispose={null}>
-      <group scale={0.1}>
+      <group scale={0.01}>
         <mesh
           castShadow
           receiveShadow
@@ -71,7 +71,7 @@ export function TopCover(
   const { nodes, materials } = useGLTF('/goupe//top-cover.prt.gltf') as GLTFResult;
   return (
     <group {...props} dispose={null}>
-      <group scale={0.1}>
+      <group scale={0.01}>
         <mesh
           castShadow
           receiveShadow

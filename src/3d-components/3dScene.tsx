@@ -16,7 +16,7 @@ export default function Scene() {
           shadows
       >
           {/* 光照 */}
-          <ambientLight color={0x000000} intensity={1}/>
+          <ambientLight color={0x606060} intensity={1}/>
           {/*<directionalLight color={0xbcd2ee} position={[1, 0.75, 0.5]} intensity={2} />*/}
           {/*方向光，投射阴影的，我调不好，但是确实可以用*/}
           <directionalLight
@@ -39,8 +39,12 @@ export default function Scene() {
               <boxGeometry/>
               <meshStandardMaterial color={0xffff00}/>
           </mesh>
-          <MainBody position={[10, 20, 10]} rotationAngle={0}/>
-          <TopCover position={[10, 30, 10]} rotationAngle={0}/>
+
+
+          <MainBody position={[10, 1, 10]} rotationAngle={0}/>
+          <TopCover position={[10, 1.5, 10]} rotationAngle={0}/>
+          <MainBody position={[5, 1, 10]} rotationAngle={0}/>
+          <TopCover position={[5, 1, 10]} rotationAngle={0}/>
 
           {/*木地板*/}
           <WoodFloor/>
@@ -54,7 +58,7 @@ export default function Scene() {
           <gridHelper args={[100, 20, 0x00ff00, 0x808080]} position={[50, 50, 0]} rotation={[0, 0, Math.PI / 2]}/>
 
           {/* 画框（大概） */}
-          {/* <FrameBox position={[50, 5, 0]} rotationAngle={0} /> */}
+          {/* <FrameBox position={[50, 5, 0]} rotationAngle={0} />*/}
           <FrameBox position={[-50, 11, -12]} rotationAngle={0}/>
           <FrameBox position={[-50, 11, 12]} rotationAngle={0}/>
           <FrameBox position={[-50, 11, 36]} rotationAngle={0}/>
@@ -78,11 +82,10 @@ function WoodFloor() {
     return (
         <mesh position={[0, -1, 0]} receiveShadow>
             <boxGeometry args={[100, 2, 100]} />
-            <meshStandardMaterial map={texture} color={0xffffff} emissive={0xffffff} emissiveIntensity={0.1} />
+            <meshStandardMaterial map={texture} color={0xF5DEB3} emissive={0xD2B48C } emissiveIntensity={0.1} />
         </mesh>
     );
 }
-
 
 
 //画框占位符

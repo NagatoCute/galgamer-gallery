@@ -50,9 +50,10 @@ export function CameraPosition() {
     }
 
 
-    // 获取相机的前向方向
+// 获取相机的前向方向
     const forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
+    forward.y = 0; // 将Y轴的值设置为0，防止看天/地减速
     forward.normalize(); // 归一化前向方向
 
     // 计算右向量
