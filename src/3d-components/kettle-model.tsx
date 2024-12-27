@@ -2,11 +2,13 @@
 import { useGLTF } from '@react-three/drei'
 import type { GLTF } from 'three-stdlib'
 import * as THREE from 'three'
+import { useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 
 
 export function MainBody(
   props: 
-  { position: [number, number, number], rotationAngle: number }
+  { position: [number, number, number], rotation: [number, number, number], scale?: number }
 ) {
   type GLTFResult = GLTF & {
     nodes: {
@@ -18,9 +20,10 @@ export function MainBody(
     materials: {}
   }
   const { nodes, materials } = useGLTF('/goupe/main-body.prt.gltf') as GLTFResult;
+  const { scale = 0.05 } = props;
   return (
     <group {...props} dispose={null}>
-      <group scale={0.01}>
+      <group scale={scale}>
         <mesh
           castShadow
           receiveShadow
@@ -53,7 +56,7 @@ export function MainBody(
 
 export function TopCover(
   props: 
-  { position: [number, number, number], rotationAngle: number }
+  { position: [number, number, number], rotation: [number, number, number], scale?: number }
 ) {
   type GLTFResult = GLTF & {
     nodes: {
@@ -68,10 +71,21 @@ export function TopCover(
     }
     materials: {}
   }
+  const myGroup = useRef<THREE.Group>(null);
   const { nodes, materials } = useGLTF('/goupe//top-cover.prt.gltf') as GLTFResult;
+  const { scale = 0.05 } = props;
+  
+  useFrame(({ clock }) => {
+    if (myGroup.current)
+    {
+      myGroup.current.rotation.y = clock.getElapsedTime();
+      myGroup.current.position.y = Math.sin(Math.PI * clock.getElapsedTime()) * 1.3 + props.position[1];
+    }
+  })
+
   return (
-    <group {...props} dispose={null}>
-      <group scale={0.01}>
+    <group {...props} ref={myGroup} dispose={null}>
+      <group scale={scale} >
         <mesh
           castShadow
           receiveShadow

@@ -17,7 +17,7 @@ export default function Scene() {
       >
           {/* 光照 */}
           {/*后面的数越大阴影越淡*/}
-          <ambientLight color={0x606060} intensity={0.5}/>
+          <ambientLight color={0x606060} intensity={1}/>
           {/*<directionalLight color={0xbcd2ee} position={[1, 0.75, 0.5]} intensity={2} />*/}
           {/*方向光，投射阴影的，我调不好，但是确实可以用*/}
           <directionalLight
@@ -45,10 +45,10 @@ export default function Scene() {
           <WhiteWall position={[51, 50, 0]}/>
           <WhiteWall position={[-51, 50, 0]}/>
 
-          <MainBody position={[10, 1, 10]} rotationAngle={0}/>
-          <TopCover position={[10, 1.5, 10]} rotationAngle={0}/>
-          <MainBody position={[5, 1, 10]} rotationAngle={0}/>
-          <TopCover position={[5, 1, 10]} rotationAngle={0}/>
+          <MainBody position={[10, 6, 10]} rotation={[0, Math.PI/2, 0]}/>
+          <TopCover position={[10, 10, 10]} rotation={[0, 0, 0]}/>
+          {/* <MainBody position={[5, 1, 10]} rotationAngle={0}/>
+          <TopCover position={[5, 1, 10]} rotationAngle={0}/> */}
 
           {/*木地板*/}
           <WoodFloor/>
