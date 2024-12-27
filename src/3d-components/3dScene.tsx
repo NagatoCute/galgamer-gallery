@@ -2,7 +2,7 @@ import { Canvas, useLoader } from '@react-three/fiber'
 import * as THREE from "three";
 import { CameraPosition, CameraRotation } from './CameraControl';
 import { useTexture } from "@react-three/drei"
-import { MainBody, TopCover } from './kettle-model';
+import {MainBody, Saratoga, TopCover} from './kettle-model';
 
 export default function Scene() {
   return (
@@ -40,6 +40,8 @@ export default function Scene() {
               <boxGeometry args={[1, 1, 1]}/>
               <meshStandardMaterial color={0xffff00}/>
           </mesh>
+          <Saratoga position={[0, 0, 0]} rotationAngle={0} />
+
 
           {/*墙面*/}
           <WhiteWall position={[51, 50, 0]}/>
