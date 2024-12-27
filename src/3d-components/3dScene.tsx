@@ -19,15 +19,20 @@ export default function Scene() {
         far: 1000,
       }}
       shadows
+      // 修復顏色黯淡問題
+      // https://stackoverflow.com/questions/69074954/threejs-washed-out-textures
+      // There is an issue related to sRGB encoding in THREE. In RTF you would use the linear and flat props on your <Canvas/>:
+      linear
+      flat
     >
       {/* 光照 */}
       {/*后面的数越大阴影越淡*/}
-      <ambientLight color={0x606060} intensity={0.5} />
+      <ambientLight color={'#f9eddb'} intensity={0.5} />
       {/*<directionalLight color={0xbcd2ee} position={[1, 0.75, 0.5]} intensity={2} />*/}
       {/*方向光，投射阴影的，我调不好，但是确实可以用*/}
       <directionalLight
         color={"#f9eddb"} 
-        position={[20, 20, 20]} // 调整光源位置
+        position={[20, 50, 20]} // 调整光源位置
         intensity={3}
         castShadow
         shadow-mapSize-width={2048}
@@ -41,7 +46,7 @@ export default function Scene() {
       />
 
       {/* 方塊 */}
-      <mesh position={[20, 20, 20]}>
+      <mesh position={[20, 50, 20]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color={0xffff00} />
       </mesh>
