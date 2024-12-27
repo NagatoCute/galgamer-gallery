@@ -27,22 +27,27 @@ export default function Scene() {
     >
       {/* 光照 */}
       {/*后面的数越大阴影越淡*/}
-      <ambientLight color={'#f9eddb'} intensity={0.5} />
+      <ambientLight color={'#f9eddb'} intensity={0.85} />
       {/*<directionalLight color={0xbcd2ee} position={[1, 0.75, 0.5]} intensity={2} />*/}
       {/*方向光，投射阴影的，我调不好，但是确实可以用*/}
       <directionalLight
         color={"#f9eddb"} 
         position={[20, 50, 20]} // 调整光源位置
-        intensity={3}
+        intensity={1.25}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-near={0.1}
+        shadow-mapSize-width={8192}  // 阴影质量
+        shadow-mapSize-height={8192}
+        shadow-camera-near={0.01}
         shadow-camera-far={200}
         shadow-camera-left={-50}
         shadow-camera-right={50}
         shadow-camera-top={50}
         shadow-camera-bottom={-50}
+
+        // https://discourse.threejs.org/t/strange-rendering-issue-with-texture/30203/2
+        // These patterns are called shadow acne . 
+        shadow-normalBias={0.01}
+        shadow-bias={-0.001}
       />
 
       {/* 方塊 */}
