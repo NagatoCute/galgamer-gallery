@@ -7,7 +7,10 @@ import { useFrame } from '@react-three/fiber'
 
 export function Saratoga(
   props:
-    { position: [number, number, number], rotationAngle: number }
+    { position: [number, number, number],
+      // rotationAngle: number
+      rotation: [number, number, number]
+    }
 ) {
   type GLTFResult = GLTF & {
     nodes: {
@@ -27,7 +30,7 @@ export function Saratoga(
       tou: THREE.MeshStandardMaterial
     }
   }
-  const { nodes, materials } = useGLTF('/3D//丛雨.gltf') as GLTFResult
+  const { nodes, materials } = useGLTF('/3D//萨拉托加.gltf') as GLTFResult
   return (
     <group {...props} dispose={null}>
       <group scale={5}>
