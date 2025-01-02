@@ -58,11 +58,7 @@ export default function Scene() {
 
           {/* 碧蓝航线 */}
           <Saratoga position={[30, 1, 30]} rotation={[0, -Math.PI / 2, 0]}/>
-          <mesh
-              position={[30, 0, 30]} // 调整立方体的位置
-              castShadow // 投射阴影
-              receiveShadow // 接受阴影
-          >
+          <mesh position={[30, 0, 30]} castShadow receiveShadow>
               <boxGeometry args={[4, 2, 4]}/>
               <meshStandardMaterial color="pink"/>
           </mesh>
